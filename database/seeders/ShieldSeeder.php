@@ -42,8 +42,8 @@ class ShieldSeeder extends Seeder
             return;
         }
 
-        // Get admin role name (from config: "Admin")
-        $adminRoleName = Utils::getPanelUserRoleName();
+        // Get admin role name (use "panel_user" as created in makeRolesWithPermissions)
+        $adminRoleName = 'panel_user';
 
         // Create or update superadmin user
         // Use withoutEvents to prevent automatic Partner creation
