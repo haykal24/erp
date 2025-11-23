@@ -1,28 +1,23 @@
 #!/bin/bash
+
 set -e
 
-echo "Starting application setup..."
+echo "Starting Laravel application setup..."
 
 # Wait for database to be ready (optional, uncomment if needed)
 # echo "Waiting for database..."
-# while ! nc -z $DB_HOST $DB_PORT; do
+# while ! nc -z ${DB_HOST} ${DB_PORT}; do
 #   sleep 0.1
 # done
 # echo "Database is ready!"
-
-# Generate APP_KEY if not set
-if [ -z "$APP_KEY" ]; then
-    echo "Generating APP_KEY..."
-    php artisan key:generate --force
-fi
 
 # Run migrations
 echo "Running migrations..."
 php artisan migrate --force
 
-# Run seeders
+# Run seeders (creates superadmin and roles)
 echo "Running seeders..."
-php artisan db:seed --force
+php artisan db:seed --force || echo "Warning: Seeding failed or already completed"
 
 # Cache configuration
 echo "Caching configuration..."
@@ -32,17 +27,19 @@ php artisan config:cache
 echo "Caching routes..."
 php artisan route:cache
 
-# Publish Filament assets
+# Publish Filament assets (if not already published)
 echo "Publishing Filament assets..."
 php artisan filament:assets || true
 
-# Cache views (skip if error)
+# Cache views (skip if fails, views will be compiled on-demand)
 echo "Caching views..."
-php artisan view:cache || true
+php artisan view:cache || echo "Warning: View cache failed, views will be compiled on-demand"
 
-# Create storage link
-echo "Creating storage link..."
-php artisan storage:link || true
+# Create storage link if it doesn't exist
+if [ ! -L public/storage ]; then
+    echo "Creating storage link..."
+    php artisan storage:link
+fi
 
 # Set permissions
 echo "Setting permissions..."
@@ -53,11 +50,17 @@ chmod -R 755 /var/www/storage /var/www/bootstrap/cache
 echo "Clearing application cache..."
 php artisan cache:clear
 
-echo "Setup completed successfully!"
+echo "Setup completed!"
+
+# Remove any default Nginx sites
+rm -f /etc/nginx/sites-enabled/default
+
+# Test Nginx configuration
+echo "Testing Nginx configuration..."
+nginx -t || echo "Warning: Nginx configuration test failed"
 
 # Start PHP-FPM in background
 php-fpm -D
 
 # Start Nginx in foreground
-nginx -g "daemon off;"
-
+exec nginx -g "daemon off;"
