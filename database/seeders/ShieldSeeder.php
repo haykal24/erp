@@ -4,7 +4,9 @@ namespace Database\Seeders;
 
 use BezhanSalleh\FilamentShield\Support\Utils;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use Webkul\Partner\Models\Industry;
@@ -23,6 +25,12 @@ class ShieldSeeder extends Seeder
 
         static::makeRolesWithPermissions($rolesWithPermissions);
         static::makeDirectPermissions($directPermissions);
+
+        // Generate all permissions for admin panel
+        $this->generateAllPermissions();
+
+        // Assign all permissions to panel_user role
+        $this->assignAllPermissionsToRole();
 
         // Create admin user (only if no user with panel_user role exists)
         $this->createSuperAdminUser();
@@ -145,5 +153,43 @@ class ShieldSeeder extends Seeder
                 }
             }
         }
+    }
+
+    /**
+     * Generate all permissions for admin panel
+     */
+    protected function generateAllPermissions(): void
+    {
+        $this->command->info('Generating all permissions...');
+        
+        \Artisan::call('shield:generate', [
+            '--all'    => true,
+            '--option' => 'permissions',
+            '--panel'  => 'admin',
+        ], $this->command->getOutput());
+    }
+
+    /**
+     * Assign all permissions to panel_user role
+     */
+    protected function assignAllPermissionsToRole(): void
+    {
+        $role = Role::where('name', 'panel_user')->first();
+        
+        if (!$role) {
+            $this->command->warn('Role panel_user not found. Skipping permission assignment.');
+            return;
+        }
+
+        $permissions = Permission::all();
+        
+        if ($permissions->isEmpty()) {
+            $this->command->warn('No permissions found. Make sure shield:generate has been run.');
+            return;
+        }
+
+        $role->syncPermissions($permissions);
+        
+        $this->command->info("Assigned {$permissions->count()} permissions to panel_user role.");
     }
 }
