@@ -1,0 +1,61 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules
+vendor
+
+# Build artifacts
+public/build
+public/hot
+public/storage
+storage/*.key
+storage/logs/*
+!storage/logs/.gitkeep
+storage/framework/cache/*
+!storage/framework/cache/.gitkeep
+storage/framework/sessions/*
+!storage/framework/sessions/.gitkeep
+storage/framework/views/*
+!storage/framework/views/.gitkeep
+
+# Testing
+.phpunit.result.cache
+coverage
+tests
+
+# Documentation
+*.md
+!README.md
+CHANGELOG.md
+CODE_OF_CONDUCT.md
+LICENSE
+
+# Docker (keep these files, they're needed for deployment)
+# Dockerfile
+# docker-entrypoint.sh
+docker-compose.yml
+
+# Misc
+.editorconfig
+.pint.json
+phpunit.xml
+

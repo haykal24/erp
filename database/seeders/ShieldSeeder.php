@@ -4,7 +4,10 @@ namespace Database\Seeders;
 
 use BezhanSalleh\FilamentShield\Support\Utils;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\PermissionRegistrar;
+use Webkul\Security\Models\User;
+use Webkul\Support\Models\Company;
 
 class ShieldSeeder extends Seeder
 {
@@ -18,7 +21,49 @@ class ShieldSeeder extends Seeder
         static::makeRolesWithPermissions($rolesWithPermissions);
         static::makeDirectPermissions($directPermissions);
 
+        // Create superadmin user
+        $this->createSuperAdminUser();
+
         $this->command->info('Shield Seeding Completed.');
+    }
+
+    /**
+     * Create superadmin user
+     */
+    protected function createSuperAdminUser(): void
+    {
+        // Get or create default company
+        $company = Company::first();
+        
+        if (! $company) {
+            $this->command->warn('No company found. Please run CompanySeeder first.');
+            return;
+        }
+
+        // Get admin role name (from config: "Admin")
+        $adminRoleName = Utils::getPanelUserRoleName();
+
+        // Create or update superadmin user
+        $user = User::updateOrCreate(
+            ['email' => 'erp@ndh.digital'],
+            [
+                'name'                => 'Super Admin',
+                'email'               => 'erp@ndh.digital',
+                'password'            => Hash::make('password'),
+                'resource_permission' => 'global',
+                'default_company_id'  => $company->id,
+                'is_default'          => true,
+                'is_active'           => true,
+                'email_verified_at'   => now(),
+            ]
+        );
+
+        // Assign admin role
+        if (! $user->hasRole($adminRoleName)) {
+            $user->assignRole($adminRoleName);
+        }
+
+        $this->command->info("Superadmin user created: {$user->email}");
     }
 
     protected static function makeRolesWithPermissions(string $rolesWithPermissions): void
