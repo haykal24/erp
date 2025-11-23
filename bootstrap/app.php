@@ -13,13 +13,6 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         // Trust all proxies (Traefik reverse proxy)
         $middleware->trustProxies(at: '*');
-        
-        // Force HTTPS in production
-        if (app()->environment('production')) {
-            $middleware->validateCsrfTokens(except: [
-                // Add any routes that should be excluded from CSRF validation
-            ]);
-        }
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
