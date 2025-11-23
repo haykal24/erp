@@ -53,7 +53,20 @@ else
         echo "Generating APP_KEY..."
         php artisan key:generate --force
     fi
+    
+    # Ensure APP_URL uses HTTPS if in production
+    if [ "$APP_ENV" = "production" ] || [ -z "$APP_ENV" ]; then
+        if grep -q "^APP_URL=" /var/www/.env; then
+            # Replace http:// with https:// in APP_URL
+            sed -i 's|^APP_URL=http://|APP_URL=https://|g' /var/www/.env
+            echo "Updated APP_URL to use HTTPS"
+        fi
+    fi
 fi
+
+# Clear config cache to ensure environment variables are reloaded
+echo "Clearing config cache..."
+php artisan config:clear || true
 
 # Wait for database to be ready (optional, uncomment if needed)
 # echo "Waiting for database..."
