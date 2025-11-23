@@ -276,7 +276,7 @@ class InstallCommand extends Command
         $settingsToRun = collect([]);
 
         foreach ($this->package->settingFileNames as $setting) {
-            if ($this->hasMigrationAlreadyRun($migration)) {
+            if ($this->hasMigrationAlreadyRun($setting)) {
                 continue;
             }
 
