@@ -19,13 +19,20 @@ class CountrySeeder extends Seeder
             $countries = json_decode(File::get($path), true);
 
             $formattedCountries = collect($countries)->map(function ($country) {
+                $currencyId = isset($country['currency_id']) ? (int) $country['currency_id'] : null;
+                
+                // Verify currency exists, set to null if not found
+                if ($currencyId && !DB::table('currencies')->where('id', $currencyId)->exists()) {
+                    $currencyId = null;
+                }
+                
                 return [
-                    'currency_id'    => (int) $country['currency_id'] ?? null,
-                    'phone_code'     => (int) $country['phone_code'] ?? null,
+                    'currency_id'    => $currencyId,
+                    'phone_code'     => (int) ($country['phone_code'] ?? null),
                     'code'           => $country['code'] ?? null,
                     'name'           => $country['name'] ?? null,
-                    'state_required' => (bool) $country['state_required'],
-                    'zip_required'   => (bool) $country['zip_required'],
+                    'state_required' => (bool) ($country['state_required'] ?? false),
+                    'zip_required'   => (bool) ($country['zip_required'] ?? false),
                     'created_at'     => now(),
                     'updated_at'     => now(),
                 ];

@@ -6,6 +6,8 @@ use BezhanSalleh\FilamentShield\Support\Utils;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\PermissionRegistrar;
+use Webkul\Partner\Models\Industry;
+use Webkul\Partner\Models\Partner;
 use Webkul\Security\Models\User;
 use Webkul\Support\Models\Company;
 
@@ -44,19 +46,40 @@ class ShieldSeeder extends Seeder
         $adminRoleName = Utils::getPanelUserRoleName();
 
         // Create or update superadmin user
-        $user = User::updateOrCreate(
-            ['email' => 'erp@ndh.digital'],
-            [
-                'name'                => 'Super Admin',
-                'email'               => 'erp@ndh.digital',
-                'password'            => Hash::make('password'),
-                'resource_permission' => 'global',
-                'default_company_id'  => $company->id,
-                'is_default'          => true,
-                'is_active'           => true,
-                'email_verified_at'   => now(),
-            ]
-        );
+        // Use withoutEvents to prevent automatic Partner creation
+        $user = User::withoutEvents(function () use ($company) {
+            return User::updateOrCreate(
+                ['email' => 'erp@ndh.digital'],
+                [
+                    'name'                => 'Super Admin',
+                    'email'               => 'erp@ndh.digital',
+                    'password'            => Hash::make('password'),
+                    'resource_permission' => 'global',
+                    'default_company_id'  => $company->id,
+                    'is_default'          => true,
+                    'is_active'           => true,
+                    'email_verified_at'   => now(),
+                ]
+            );
+        });
+        
+        // Create Partner manually if it doesn't exist
+        if (!$user->partner_id) {
+            // Get first industry if available
+            $industry = Industry::first();
+            
+            $partner = Partner::create([
+                'creator_id' => $user->id,
+                'user_id'    => $user->id,
+                'sub_type'   => 'partner',
+                'name'       => $user->name,
+                'email'      => $user->email,
+                'industry_id' => $industry?->id,
+            ]);
+            
+            $user->partner_id = $partner->id;
+            $user->saveQuietly(); // Save without triggering events
+        }
 
         // Assign admin role
         if (! $user->hasRole($adminRoleName)) {
