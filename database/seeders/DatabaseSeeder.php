@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             SecurityDatabaseSeeder::class,
             SupportDatabaseSeeder::class,
+            ShieldSeeder::class,
         ]);
     }
 }
