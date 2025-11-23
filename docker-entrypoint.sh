@@ -95,6 +95,10 @@ php artisan route:cache
 echo "Publishing Filament assets..."
 php artisan filament:assets || true
 
+# Publish Livewire assets (if needed)
+echo "Publishing Livewire assets..."
+php artisan livewire:publish --assets || true
+
 # Cache views (skip if fails, views will be compiled on-demand)
 echo "Caching views..."
 php artisan view:cache || echo "Warning: View cache failed, views will be compiled on-demand"
