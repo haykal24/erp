@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use BezhanSalleh\FilamentShield\Support\Utils;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use Webkul\Partner\Models\Industry;
 use Webkul\Partner\Models\Partner;
@@ -23,17 +24,32 @@ class ShieldSeeder extends Seeder
         static::makeRolesWithPermissions($rolesWithPermissions);
         static::makeDirectPermissions($directPermissions);
 
-        // Create superadmin user
+        // Create admin user (only if no user with panel_user role exists)
         $this->createSuperAdminUser();
 
         $this->command->info('Shield Seeding Completed.');
     }
 
     /**
-     * Create superadmin user
+     * Create admin user (only if no user with panel_user role exists)
      */
     protected function createSuperAdminUser(): void
     {
+        // Get admin role name (use "panel_user" as created in makeRolesWithPermissions)
+        $adminRoleName = 'panel_user';
+        
+        // Check if there's already a user with the admin role
+        $role = Role::where('name', $adminRoleName)->first();
+        
+        if ($role) {
+            $existingUser = User::role($adminRoleName)->first();
+            
+            if ($existingUser) {
+                $this->command->info("User with admin role already exists: {$existingUser->email} ({$existingUser->name})");
+                return;
+            }
+        }
+
         // Get or create default company
         $company = Company::first();
         
@@ -42,16 +58,13 @@ class ShieldSeeder extends Seeder
             return;
         }
 
-        // Get admin role name (use "panel_user" as created in makeRolesWithPermissions)
-        $adminRoleName = 'panel_user';
-
-        // Create or update superadmin user
+        // Create or update admin user
         // Use withoutEvents to prevent automatic Partner creation
         $user = User::withoutEvents(function () use ($company) {
             return User::updateOrCreate(
                 ['email' => 'erp@ndh.digital'],
                 [
-                    'name'                => 'Super Admin',
+                    'name'                => 'Admin',
                     'email'               => 'erp@ndh.digital',
                     'password'            => Hash::make('password'),
                     'resource_permission' => 'global',
@@ -86,7 +99,7 @@ class ShieldSeeder extends Seeder
             $user->assignRole($adminRoleName);
         }
 
-        $this->command->info("Superadmin user created: {$user->email}");
+        $this->command->info("Admin user created: {$user->email}");
     }
 
     protected static function makeRolesWithPermissions(string $rolesWithPermissions): void
